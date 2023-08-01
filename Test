@@ -65,6 +65,22 @@ const App = () => {
     setData(newData);
   };
 
+  const getOptionsColumn2 = (rowIndex) => {
+    const prevRow = data[rowIndex - 1];
+    if (prevRow) {
+      return optionsColumn2[prevRow.column1] || [];
+    }
+    return [];
+  };
+
+  const getOptionsColumn3 = (rowIndex) => {
+    const prevRow = data[rowIndex - 1];
+    if (prevRow) {
+      return optionsColumn3[prevRow.column2] || [];
+    }
+    return [];
+  };
+
   const addRow = () => {
     const newRow = { id: rowCount + 1, column1: '', column2: '', column3: '' };
     setData(prevData => [...prevData, newRow]);
@@ -82,13 +98,13 @@ const App = () => {
             className="w-40"
           />
           <Select
-            options={optionsColumn2[row.column1] || []}
+            options={getOptionsColumn2(index)}
             value={optionsColumn2[row.column1]?.find(option => option.value === row.column2)}
             onChange={selectedOption => handleColumn2Change(selectedOption, index)}
             className="w-40"
           />
           <Select
-            options={optionsColumn3[row.column2] || []}
+            options={getOptionsColumn3(index)}
             value={optionsColumn3[row.column2]?.find(option => option.value === row.column3)}
             onChange={selectedOption => handleColumn3Change(selectedOption, index)}
             className="w-40"
