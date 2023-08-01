@@ -1,0 +1,108 @@
+import React, { useState } from 'react';
+import Select from 'react-select';
+
+const initialData = [
+  { id: 1, column1: '', column2: '', column3: '' },
+];
+
+const optionsColumn1 = [
+  { value: 'Option 1', label: 'Option 1' },
+  { value: 'Option 2', label: 'Option 2' },
+];
+
+const optionsColumn2 = {
+  'Option 1': [
+    { value: 'Option 1-A', label: 'Option 1-A' },
+    { value: 'Option 1-B', label: 'Option 1-B' },
+  ],
+  'Option 2': [
+    { value: 'Option 2-A', label: 'Option 2-A' },
+    { value: 'Option 2-B', label: 'Option 2-B' },
+  ],
+};
+
+const optionsColumn3 = {
+  'Option 1-A': [
+    { value: 'Option 1-A-1', label: 'Option 1-A-1' },
+    { value: 'Option 1-A-2', label: 'Option 1-A-2' },
+  ],
+  'Option 1-B': [
+    { value: 'Option 1-B-1', label: 'Option 1-B-1' },
+    { value: 'Option 1-B-2', label: 'Option 1-B-2' },
+  ],
+  'Option 2-A': [
+    { value: 'Option 2-A-1', label: 'Option 2-A-1' },
+    { value: 'Option 2-A-2', label: 'Option 2-A-2' },
+  ],
+  'Option 2-B': [
+    { value: 'Option 2-B-1', label: 'Option 2-B-1' },
+    { value: 'Option 2-B-2', label: 'Option 2-B-2' },
+  ],
+};
+
+const App = () => {
+  const [data, setData] = useState(initialData);
+  const [rowCount, setRowCount] = useState(1);
+
+  const handleColumn1Change = (selectedOption, rowIndex) => {
+    const newData = [...data];
+    newData[rowIndex].column1 = selectedOption.value;
+    newData[rowIndex].column2 = '';
+    newData[rowIndex].column3 = '';
+    setData(newData);
+  };
+
+  const handleColumn2Change = (selectedOption, rowIndex) => {
+    const newData = [...data];
+    newData[rowIndex].column2 = selectedOption.value;
+    newData[rowIndex].column3 = '';
+    setData(newData);
+  };
+
+  const handleColumn3Change = (selectedOption, rowIndex) => {
+    const newData = [...data];
+    newData[rowIndex].column3 = selectedOption.value;
+    setData(newData);
+  };
+
+  const addRow = () => {
+    const newRow = { id: rowCount + 1, column1: '', column2: '', column3: '' };
+    setData(prevData => [...prevData, newRow]);
+    setRowCount(prevRowCount => prevRowCount + 1);
+  };
+
+  return (
+    <div className="p-4">
+      {data.map((row, index) => (
+        <div key={row.id} className="flex items-center space-x-4 mb-2">
+          <Select
+            options={optionsColumn1}
+            value={optionsColumn1.find(option => option.value === row.column1)}
+            onChange={selectedOption => handleColumn1Change(selectedOption, index)}
+            className="w-40"
+          />
+          <Select
+            options={optionsColumn2[row.column1] || []}
+            value={optionsColumn2[row.column1]?.find(option => option.value === row.column2)}
+            onChange={selectedOption => handleColumn2Change(selectedOption, index)}
+            className="w-40"
+          />
+          <Select
+            options={optionsColumn3[row.column2] || []}
+            value={optionsColumn3[row.column2]?.find(option => option.value === row.column3)}
+            onChange={selectedOption => handleColumn3Change(selectedOption, index)}
+            className="w-40"
+          />
+        </div>
+      ))}
+      <button
+        onClick={addRow}
+        className="px-4 py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        Add Row
+      </button>
+    </div>
+  );
+};
+
+export default App;
