@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clickable Bar Chart</title>
+  <title>Clickable Y-Axis Values</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
 </head>
 <body>
@@ -24,26 +24,31 @@
       type: 'bar',
       data: data,
       options: {
+        onClick: (e, activeElements) => {
+          if (activeElements.length > 0) {
+            const dataIndex = activeElements[0].index;
+            const link = data.datasets[0].links[dataIndex];
+            if (link) {
+              window.open(link, '_blank');
+            }
+          }
+        },
         scales: {
           y: {
-            beginAtZero: true
+            beginAtZero: true,
+            ticks: {
+              callback: (value, index, values) => {
+                // Use index to get the corresponding link
+                const link = data.datasets[0].links[index];
+                return link ? `<a href="${link}" target="_blank">${value}</a>` : value;
+              }
+            }
           }
         }
       }
     };
 
     const myChart = new Chart(document.getElementById('myBarChart'), config);
-
-    document.getElementById('myBarChart').addEventListener('click', function(evt) {
-      const activePoints = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true });
-      if (activePoints.length > 0) {
-        const dataIndex = activePoints[0].index;
-        const link = data.datasets[0].links[dataIndex];
-        if (link) {
-          window.open(link, '_blank');
-        }
-      }
-    });
   </script>
 </body>
 </html>
