@@ -1,83 +1,49 @@
-import React, { useState } from 'react';
-import Select from 'react-select';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clickable Bar Chart</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
+</head>
+<body>
+  <canvas id="myBarChart"></canvas>
 
-const initialData = [
-  { id: 1, column1: '', column2: '', column3: '' },
-];
+  <script>
+    const data = {
+      labels: ['Label 1', 'Label 2', 'Label 3'],
+      datasets: [{
+        label: 'Data',
+        data: [10, 20, 15],
+        backgroundColor: ['red', 'green', 'blue'],
+        links: ['https://link1.com', 'https://link2.com', 'https://link3.com']
+      }]
+    };
 
-const optionsColumn2 = [
-  { value: 'Option 1', label: 'Option 1' },
-  { value: 'Option 2', label: 'Option 2' },
-];
+    const config = {
+      type: 'bar',
+      data: data,
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
 
-const optionsColumn3 = {
-  'Option 1': [
-    { value: 'Option 1-A', label: 'Option 1-A' },
-    { value: 'Option 1-B', label: 'Option 1-B' },
-  ],
-  'Option 2': [
-    { value: 'Option 2-A', label: 'Option 2-A' },
-    { value: 'Option 2-B', label: 'Option 2-B' },
-  ],
-};
+    const myChart = new Chart(document.getElementById('myBarChart'), config);
 
-const App = () => {
-  const [data, setData] = useState(initialData);
-  const [rowCount, setRowCount] = useState(1);
-
-  const handleColumn1Change = (selectedOption, rowIndex) => {
-    const newData = [...data];
-    newData[rowIndex].column1 = selectedOption.value;
-    newData[rowIndex].column2 = '';
-    newData[rowIndex].column3 = '';
-    setData(newData);
-  };
-
-  const handleColumn2Change = (selectedOption, rowIndex) => {
-    const newData = [...data];
-    newData[rowIndex].column2 = selectedOption.value;
-    newData[rowIndex].column3 = '';
-    setData(newData);
-  };
-
-  const handleColumn3Change = (selectedOption, rowIndex) => {
-    const newData = [...data];
-    newData[rowIndex].column3 = selectedOption.value;
-    setData(newData);
-  };
-
-  const addRow = () => {
-    const newRow = { id: rowCount + 1, column1: '', column2: '', column3: '' };
-    setData(prevData => [...prevData, newRow]);
-    setRowCount(prevRowCount => prevRowCount + 1);
-  };
-
-  return (
-    <div className="p-4">
-      {data.map((row, index) => (
-        <div key={row.id} className="flex items-center space-x-4 mb-2">
-          <Select
-            options={optionsColumn2}
-            value={optionsColumn2.find(option => option.value === row.column2)}
-            onChange={selectedOption => handleColumn2Change(selectedOption, index)}
-            className="w-40"
-          />
-          <Select
-            options={optionsColumn3[row.column2] || []}
-            value={optionsColumn3[row.column2]?.find(option => option.value === row.column3)}
-            onChange={selectedOption => handleColumn3Change(selectedOption, index)}
-            className="w-40"
-          />
-        </div>
-      ))}
-      <button
-        onClick={addRow}
-        className="px-4 py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Add Row
-      </button>
-    </div>
-  );
-};
-
-export default App;
+    document.getElementById('myBarChart').addEventListener('click', function(evt) {
+      const activePoints = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true });
+      if (activePoints.length > 0) {
+        const dataIndex = activePoints[0].index;
+        const link = data.datasets[0].links[dataIndex];
+        if (link) {
+          window.open(link, '_blank');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
