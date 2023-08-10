@@ -1,52 +1,68 @@
-//HOME COMPONENT
-<div class="home bg-opacity-50 bg-orange-300 p-4 flex flex-col items-start justify-baseline">
-  <div class="home__header w-full inline-flex self-baseline justify-evenly items-center bg-yellow-400">
-    <h3 class="pr-16">Header</h3>
-  </div>
-  <div class="home__description mt-4 mr-16">
-    <ul class="mt-4"></ul>
-    <p class="mt-4"></p>
-  </div>
-  <div class="home__footer w-85 ml-16 block border-t border-gray-400 pt-4">
-    <ul class="list-none"></ul>
-  </div>
-</div>
+import React, { useState } from 'react';
 
+const DynamicTable = () => {
+  const [selectedValue, setSelectedValue] = useState('option1');
 
-//NAVBAR
-<div class="nav flex flex-row justify-center items-stretch h-full">
-  <div class="nav__list-item w-28"></div>
-  <div class="nav__link-section absolute top-7 left-0 right-0 bottom-0 bg-white border-b border-gray-400">
-    <a class="nav__link"></a>
-  </div>
-  <div class="nav__logo mb-8"></div>
-  <div class="nav__wrapper flex flex-row justify-center items-end pt-7 h-28 w-full relative mt-0 bg-blue-500">
-  </div>
-</div>
+  const handleDropdownChange = (event) => {
+    setSelectedValue(event.target.value);
+  };
 
-
-//QUEUE
-<div class="queue flex flex-col items-center justify-baseline pb-4">
-  <div class="queue__title flex flex-col self-center mt-4"></div>
-  <div class="queue__property-title text-xs font-bold"></div>
-  <div class="queue__card w-90 border border-black p-2 m-4 bg-gray-100">
-    <div class="queue-card-left inline-block mt-1 p-0.5 max-w-30"></div>
-    <div class="queue-card-right inline-block p-4 max-w-30"></div>
-    <div class="queue-card-center inline-block max-w-35 p-2">
-      <span class="mx-1"></span>
+  return (
+    <div>
+      <select value={selectedValue} onChange={handleDropdownChange}>
+        <option value="option1">Option 1</option>
+        <option value="option2">Option 2</option>
+        <option value="option3">Option 3</option>
+      </select>
+      {/* Render table here */}
     </div>
-  </div>
-</div>
+  );
+};
+
+export default DynamicTable;
 
 
-//UserSearch
-<div class="user-search flex flex-col items-center justify-baseline pb-4">
-  <div class="user-search__card w-90 border border-black p-4 m-4 bg-gray-100">
-    <div class="user-search-card-left inline-block mt-1"></div>
-    <div class="user-search-card-right inline-block mt-4 pl-10"></div>
-    <div class="user-search-card-center inline-block ml-8 w-60"></div>
-  </div>
-  <div class="user-search__title flex flex-col items-center self-stretch mt-4">
-    <input class="w-90 border border-gray-400 rounded-2% p-2" />
-  </div>
-</div>
+
+
+
+
+const generateColumns = (selectedValue) => {
+  switch (selectedValue) {
+    case 'option1':
+      return ['Column A', 'Column B'];
+    case 'option2':
+      return ['Column X', 'Column Y', 'Column Z'];
+    case 'option3':
+      return ['Column P', 'Column Q', 'Column R', 'Column S'];
+    default:
+      return [];
+  }
+};
+
+
+
+
+
+const DynamicTable = () => {
+  // ... (same code as above)
+
+  const columns = generateColumns(selectedValue);
+
+  return (
+    <div>
+      {/* Dropdown */}
+      <table>
+        <thead>
+          <tr>
+            {columns.map((column, index) => (
+              <th key={index}>{column}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {/* Render table rows here */}
+        </tbody>
+      </table>
+    </div>
+  );
+};
