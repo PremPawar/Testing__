@@ -1,68 +1,62 @@
-import React, { useState } from 'react';
+const DropdownRow = ({ rowIndex, selectedValue, onSelectionChange }) => {
+  const options = getOptionsBasedOnValue(selectedValue);
 
-const DynamicTable = () => {
-  const [selectedValue, setSelectedValue] = useState('option1');
+  return (
+    <div className="flex space-x-4">
+      <select
+        value={selectedValue}
+        onChange={(e) => onSelectionChange(rowIndex, e.target.value)}
+        className="border p-2"
+      >
+        {options.map((option, index) => (
+          <option key={index} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
 
-  const handleDropdownChange = (event) => {
-    setSelectedValue(event.target.value);
+
+
+
+
+const [rows, setRows] = useState([{ selectedValue: '' }]);
+
+  const getOptionsBasedOnValue = (selectedValue) => {
+    // Replace this with your logic to fetch options based on the selected value
+    // For example, you can use an API call or a predefined mapping
+    // For demonstration purposes, let's return some static options
+    if (selectedValue === 'Option 1') {
+      return ['Option 1.1', 'Option 1.2', 'Option 1.3'];
+    } else if (selectedValue === 'Option 2') {
+      return ['Option 2.1', 'Option 2.2', 'Option 2.3'];
+    } else {
+      return [];
+    }
   };
 
-  return (
-    <div>
-      <select value={selectedValue} onChange={handleDropdownChange}>
-        <option value="option1">Option 1</option>
-        <option value="option2">Option 2</option>
-        <option value="option3">Option 3</option>
-      </select>
-      {/* Render table here */}
+  const handleSelectionChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].selectedValue = value;
+    if (rowIndex === updatedRows.length - 1) {
+      updatedRows.push({ selectedValue: '' });
+    }
+    setRows(updatedRows);
+  };
+
+
+
+
+
+<div>
+      {rows.map((row, index) => (
+        <DropdownRow
+          key={index}
+          rowIndex={index}
+          selectedValue={row.selectedValue}
+          onSelectionChange={handleSelectionChange}
+        />
+      ))}
     </div>
-  );
-};
-
-export default DynamicTable;
-
-
-
-
-
-
-const generateColumns = (selectedValue) => {
-  switch (selectedValue) {
-    case 'option1':
-      return ['Column A', 'Column B'];
-    case 'option2':
-      return ['Column X', 'Column Y', 'Column Z'];
-    case 'option3':
-      return ['Column P', 'Column Q', 'Column R', 'Column S'];
-    default:
-      return [];
-  }
-};
-
-
-
-
-
-const DynamicTable = () => {
-  // ... (same code as above)
-
-  const columns = generateColumns(selectedValue);
-
-  return (
-    <div>
-      {/* Dropdown */}
-      <table>
-        <thead>
-          <tr>
-            {columns.map((column, index) => (
-              <th key={index}>{column}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {/* Render table rows here */}
-        </tbody>
-      </table>
-    </div>
-  );
-};
