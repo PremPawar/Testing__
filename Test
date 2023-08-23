@@ -11,9 +11,9 @@ const App = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Navbar */}
-      <nav className="bg-blue-500 p-4">
+      <nav className={`bg-${activeTab === 'tab1' ? 'blue' : 'green'}-500 p-4 text-white text-center`}>
         <div className="flex justify-between items-center">
-          <div className="text-white font-bold text-xl">Logo</div>
+          <div className="font-bold text-xl">Logo</div>
           <div className="flex space-x-4">
             <TabButton tab="tab1" activeTab={activeTab} onChange={handleTabChange}>
               Tab 1
@@ -26,8 +26,8 @@ const App = () => {
       </nav>
 
       {/* Bottom Navbar */}
-      <nav className="bg-gray-100 p-4">
-        <div className="flex space-x-4">
+      <nav className="bg-gray-100 p-4 text-center">
+        <div className="flex space-x-4 justify-center">
           {activeTab === 'tab1' && (
             <>
               <OptionButton>Option 1</OptionButton>
@@ -52,7 +52,7 @@ const TabButton = ({ tab, activeTab, onChange, children }) => {
   return (
     <button
       className={`px-4 py-2 rounded ${
-        activeTab === tab ? 'bg-blue-700 text-white' : 'text-blue-700'
+        activeTab === tab ? 'bg-blue-700 text-white' : 'text-blue-500'
       }`}
       onClick={() => onChange(tab)}
     >
