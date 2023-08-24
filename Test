@@ -1,71 +1,94 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
 import './App.css'; // Import your Tailwind CSS styles
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('tab1');
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
-
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Top Navbar */}
-      <nav className={`bg-${activeTab === 'tab1' ? 'teal' : 'purple'}-500 p-4 text-white text-center`}>
-        <div className="flex justify-center items-center">
-          <div className="font-bold text-xl">Logo</div>
-          <div className="flex space-x-4">
-            <TabButton tab="tab1" activeTab={activeTab} onChange={handleTabChange}>
-              Tab 1
-            </TabButton>
-            <TabButton tab="tab2" activeTab={activeTab} onChange={handleTabChange}>
-              Tab 2
-            </TabButton>
+    <Router>
+      <div className="flex flex-col min-h-screen">
+        {/* Top Navbar */}
+        <nav className="bg-gray-800 p-4 text-white">
+          <div className="flex justify-between items-center">
+            <div className="font-bold text-xl">Logo</div>
+            <div className="flex space-x-4">
+              <NavLinkWithDefault to="/tab1" defaultPath="/option1">
+                Tab 1
+              </NavLinkWithDefault>
+              <NavLinkWithDefault to="/tab2" defaultPath="/optionA">
+                Tab 2
+              </NavLinkWithDefault>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Bottom Navbar */}
-      <nav className="bg-gray-100 p-4 text-center">
-        <div className="flex space-x-4 justify-center">
-          {activeTab === 'tab1' && (
-            <>
-              <OptionButton>Option 1</OptionButton>
-              <OptionButton>Option 2</OptionButton>
-              <OptionButton>Option 3</OptionButton>
-            </>
-          )}
-          {activeTab === 'tab2' && (
-            <>
-              <OptionButton>Option A</OptionButton>
-              <OptionButton>Option B</OptionButton>
-              <OptionButton>Option C</OptionButton>
-            </>
-          )}
-        </div>
-      </nav>
+        {/* Content */}
+        <Switch>
+          <Route path="/tab1" component={Tab1} />
+          <Route path="/tab2" component={Tab2} />
+          <Route path="/" component={Tab1} /> {/* Default route */}
+        </Switch>
+      </div>
+    </Router>
+  );
+};
+
+const NavLinkWithDefault = ({ to, defaultPath, children }) => {
+  return (
+    <Route
+      path={to}
+      children={({ match }) => (
+        <Link
+          to={to}
+          className={`px-4 py-2 rounded ${
+            match ? 'bg-teal-700 text-white' : 'text-teal-500'
+          }`}
+        >
+          {children}
+        </Link>
+      )}
+    />
+  );
+};
+
+const Tab1 = () => {
+  return (
+    <div className="bg-gray-100 p-4 text-center">
+      <div className="flex space-x-4 justify-center">
+        <OptionButtonWithDefault to="/option1">Option 1</OptionButtonWithDefault>
+        <OptionButtonWithDefault to="/option2">Option 2</OptionButtonWithDefault>
+        <OptionButtonWithDefault to="/option3">Option 3</OptionButtonWithDefault>
+      </div>
     </div>
   );
 };
 
-const TabButton = ({ tab, activeTab, onChange, children }) => {
+const Tab2 = () => {
   return (
-    <button
-      className={`px-4 py-2 rounded ${
-        activeTab === tab ? 'bg-teal-700 text-white' : 'text-teal-500'
-      }`}
-      onClick={() => onChange(tab)}
-    >
-      {children}
-    </button>
+    <div className="bg-gray-100 p-4 text-center">
+      <div className="flex space-x-4 justify-center">
+        <OptionButtonWithDefault to="/optionA">Option A</OptionButtonWithDefault>
+        <OptionButtonWithDefault to="/optionB">Option B</OptionButtonWithDefault>
+        <OptionButtonWithDefault to="/optionC">Option C</OptionButtonWithDefault>
+      </div>
+    </div>
   );
 };
 
-const OptionButton = ({ children }) => {
+const OptionButtonWithDefault = ({ to, children }) => {
   return (
-    <button className="px-4 py-2 bg-white rounded border border-gray-300">
-      {children}
-    </button>
+    <Route
+      path={to}
+      children={({ match }) => (
+        <Link
+          to={to}
+          className={`px-4 py-2 bg-white rounded border border-gray-300 ${
+            match ? 'bg-teal-500 text-white' : ''
+          }`}
+        >
+          {children}
+        </Link>
+      )}
+    />
   );
 };
 
