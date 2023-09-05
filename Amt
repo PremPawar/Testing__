@@ -24,7 +24,7 @@
 
             <label style="margin-left:60px;font-size:14px;" for="lob">LOB:</label>
             &nbsp;&nbsp;
-            <select name="lob" id="lob" style="width:100px;">
+            <select name="lob" id="lob" style="width:100px;" onchange="updateChart()">
                 <option value="wealth">Wealth</option>
                 <option value="health">Health</option>
             </select>
@@ -39,15 +39,19 @@
     <script>
         var barColors = "darkorange";
         var ctx = document.getElementById("silencetopicsallChart").getContext('2d');
+        
+        // Define initial chart data (for Wealth)
+        var initialChartData = {
+            labels: [164, 244, 265, 296, 300, 346, 508, 840, 904, 1395],
+            datasets: [{
+                backgroundColor: barColors,
+                data: [/* Define your initial Wealth data here */]
+            }]
+        };
+
         var silencetopicsallChart = new Chart(ctx, {
             type: "horizontalBar",
-            data: {
-                labels: [164, 244, 265, 296, 300, 346, 508, 840, 904, 1395],
-                datasets: [{
-                    backgroundColor: barColors,
-                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // Add your data here
-                }]
-            },
+            data: initialChartData,
             options: {
                 animation: {
                     duration: 1,
@@ -90,6 +94,33 @@
                 }
             }
         });
+
+        // Function to update the chart based on selected LOB
+        function updateChart() {
+            var selectedLOB = document.getElementById("lob").value;
+            var newData = getChartData(selectedLOB);
+            silencetopicsallChart.data.labels = newData.labels;
+            silencetopicsallChart.data.datasets[0].data = newData.data;
+            silencetopicsallChart.update();
+        }
+
+        // Define function to get chart data based on LOB
+        function getChartData(lob) {
+            if (lob === "wealth") {
+                return {
+                    labels: [164, 244, 265, 296, 300, 346, 508, 840, 904, 1395],
+                    data: [/* Define your Wealth data here */]
+                };
+            } else if (lob === "health") {
+                return {
+                    labels: [/* Define your Health labels here */],
+                    data: [/* Define your Health data here */]
+                };
+            }
+        }
+
+        // Initial chart rendering for Wealth
+        updateChart();
     </script>
 </body>
 </html>
