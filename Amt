@@ -1,0 +1,95 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+</head>
+<body>
+    <form id="myform">
+        <p>
+            <label style="margin-left:10px;font-size:14px;" for="fromdate">From Date:</label>
+            &nbsp;&nbsp;
+            <input type="datetime-local" id="fromdate" name="fromdate">
+
+            <label style="margin-left:60px;font-size:14px;" for="todate">To Date:</label>
+            &nbsp;&nbsp;
+            <input type="datetime-local" id="todate" name="todate">
+
+            <label style="margin-left:60px;font-size:14px;" for="queuedrop">Queue:</label>
+            &nbsp;&nbsp;
+            <select multiple="true" id="queuedrop" name="queuedrop" style="width:200px;" data-placeholder="Select Queues"></select>
+
+            <label style="margin-left:60px;font-size:14px;" for="lob">LOB:</label>
+            &nbsp;&nbsp;
+            <select name="lob" id="lob" style="width:100px;">
+                <option value="wealth">Wealth</option>
+                <option value="health">Health</option>
+            </select>
+            <input type="submit" style="margin-left:60px;" class="centered2" id="stasubmit" value="Search">  
+        </p>
+    </form>
+
+    <div id="chartContainer" style="margin-top: 50px;width:650px;height:300px;overflow: auto;">
+        <canvas id="silencetopicsallChart" style="width:650px;height:1000px;"></canvas>
+    </div>
+
+    <script>
+        var barColors = "darkorange";
+        var ctx = document.getElementById("silencetopicsallChart").getContext('2d');
+        var silencetopicsallChart = new Chart(ctx, {
+            type: "horizontalBar",
+            data: {
+                labels: [164, 244, 265, 296, 300, 346, 508, 840, 904, 1395],
+                datasets: [{
+                    backgroundColor: barColors,
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // Add your data here
+                }]
+            },
+            options: {
+                animation: {
+                    duration: 1,
+                    onComplete: function() {
+                        var chartInstance = this.chart,
+                            ctx = chartInstance.ctx;
+
+                        ctx.font = this.chart.font;
+
+                        ctx.textAlign = 'right';
+                        ctx.textBaseline = 'top';
+
+                        this.data.datasets.forEach(function(dataset, i) {
+                            var meta = chartInstance.controller.getDatasetMeta(i);
+                            meta.data.forEach(function(bar, index) {
+                                var data = dataset.data[index];
+                                ctx.fillText(data, bar._model.x, bar._model.y - 5);
+                            });
+                        });
+                    }
+                },
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: "Silence Time Topics"
+                },
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Count',
+                        }
+                    }],
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Topics',
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+</body>
+</html>
