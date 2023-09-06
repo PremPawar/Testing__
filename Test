@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Route, Link, Outlet, useLocation } from 'react-router-dom';
 import './App.css'; // Import your Tailwind CSS styles
 
 const App = () => {
@@ -22,31 +22,23 @@ const App = () => {
         </nav>
 
         {/* Content */}
-        <Switch>
-          <Route path="/tab1" component={Tab1} />
-          <Route path="/tab2" component={Tab2} />
-          <Route path="/" component={Tab1} /> {/* Default route */}
-        </Switch>
+        <Outlet />
       </div>
     </Router>
   );
 };
 
 const NavLinkWithDefault = ({ to, defaultPath, children }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname === defaultPath;
+
   return (
-    <Route
-      path={to}
-      children={({ match }) => (
-        <Link
-          to={to}
-          className={`px-4 py-2 rounded ${
-            match ? 'bg-teal-700 text-white' : 'text-teal-500'
-          }`}
-        >
-          {children}
-        </Link>
-      )}
-    />
+    <Link
+      to={to}
+      className={`px-4 py-2 rounded ${isActive ? 'bg-teal-700 text-white' : 'text-teal-500'}`}
+    >
+      {children}
+    </Link>
   );
 };
 
@@ -75,20 +67,18 @@ const Tab2 = () => {
 };
 
 const OptionButtonWithDefault = ({ to, children }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+
   return (
-    <Route
-      path={to}
-      children={({ match }) => (
-        <Link
-          to={to}
-          className={`px-4 py-2 bg-white rounded border border-gray-300 ${
-            match ? 'bg-teal-500 text-white' : ''
-          }`}
-        >
-          {children}
-        </Link>
-      )}
-    />
+    <Link
+      to={to}
+      className={`px-4 py-2 bg-white rounded border border-gray-300 ${
+        isActive ? 'bg-teal-500 text-white' : ''
+      }`}
+    >
+      {children}
+    </Link>
   );
 };
 
