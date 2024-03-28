@@ -1,14 +1,104 @@
+'use strict';
+
+const platformClient = require('purecloud-platform-client-v2');
+const functions = require('firebase-functions');
+
 // Initialize PureCloud API client
 const client = platformClient.ApiClient.instance;
 
 // Set environment base path (replace with your specific Genesys Cloud region)
-client.setEnvironment(platformClient.PureCloudRegionHosts.us_west_2);
+client.setEnvironment(platformClient.PureCloudRegionHosts.us_east_1);
 
-//AUTH
-client.loginClientCredentialsGrant(process.env.CLIEND_ID, process.env.CLIENT_SECRET)
-    .then(() => {
-        console.log('Authentication Successfull');
-    })
-    .catch((err) => {
-        console.log('err', err);
-    });
+const loginClientCredentialsGrant = async (CId, CSecret) => {
+  try {
+    await client.loginClientCredentialsGrant(CId, CSecret);
+    console.log('Authentication Successful');
+  } catch (err) {
+    console.error('Authentication Error:', err);
+  }
+};
+
+const getFlowsDatatableRow = async (datatableId, rowId, opts) => {
+  try {
+    const result = await apiInstance.getFlowsDatatableRow(datatableId, rowId, opts);
+    return result;
+  } catch (err) {
+    console.error('Error getting datatable row:', err);
+    throw err; // Re-throw for caller to handle
+  }
+};
+
+const getArchitectPrompts = async (opts) => {
+  try {
+    const result = await apiInstance.getArchitectPrompts(opts);
+    return result;
+  } catch (err) {
+    console.error('Error getting prompts:', err);
+    throw err; // Re-throw for caller to handle
+  }
+};
+
+const postIntegrationsActionExecute = async (actionId, body) => {
+  try {
+    const data = await apiInstanceI.postIntegrationsActionExecute(actionId, body);
+    return data;
+  } catch (err) {
+    console.error('Error calling postIntegrationsActionExecute:', err);
+    throw err; // Re-throw for caller to handle
+  }
+};
+
+exports.gdfivr = async (req, res) => {
+  const tag = req.body.fulfillmentInfo.tag;
+  let sessionParameters = {};
+
+  try {
+    if (tag === "DnisPrompt") {
+      const datatableId = "6c98b9ad038a";
+      const rowId = "MainPrompt";
+      const opts = { 'showbrief': false };
+
+      const result = await getFlowsDatatableRow(datatableId, rowId, opts);
+
+      sessionParameters.MessageType = result['MsgType'];
+      MaintainOrGenMsg = result['MaintainOrGenMsg'];
+      console.log('MaintainOrGenMsg', MaintainOrGenMsg);
+
+      if (MaintainOrGenMsg === "M-Y" || MaintainOrGenMsg === "G-Y") {
+        const promptName = result['PromptNameMainOrGenMsg'];
+        sessionParameters.isMainOrGenMsgPresent = "True";
+        sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:" + promptName;
+      } else {
+        sessionParameters.isMainOrGenMsgPresent = "False";
+        sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:silent1ms";
+      }
+
+      const ani = req.body.sessionInfo.parameters.ANI;
+      const actionId_ANIMatch = "fb987ae65e9e";
+      const body = { ani, env: 'accp' };
+
+      let ssnViaAni;
+      let aniMatch;
+      let fName;
+
+      const aniaction = await postIntegrationsActionExecute(actionId_ANIMatch, body);
+      if (aniaction.status === "success") {
+        sessionParameters.aniMatch = "Y";
+        sessionParameters.ssnViaAni = aniaction.ssn;
+      } else {
+        sessionParameters.aniMatch = "N";
+      }
+      console.log("firstPlace", sessionParameters);
+
+      if (sessionParameters.ssnViaAni) {
+        const ssn_body = {
+          enteredIdentifier: sessionParameters.ssnViaAni,
+          identifierType: 'SSN',
+          clientID: 'INGWIN',
+          sourceApp: 'IVR',
+          env: 'accp'
+        };
+        const actionId_SSNAction = "6945ffd7afe4";
+        const ssnaction = await postIntegrationsActionExecute(actionId_SSNAction, ssn_body);
+        if (ssnaction.status === "success" && ssnaction.fname) {
+          sessionParameters.fName = ssnaction.fname
