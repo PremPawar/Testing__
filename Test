@@ -1,29 +1,324 @@
-<div className="bg-gray-200 min-h-screen p-4">
-      <div className="container mx-auto flex flex-wrap justify-center">
-        {/* Card 1 */}
-        <div className="w-full md:w-1/2 lg:w-1/3 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-4">
-            {/* Add your chart component here */}
-            <p>Chart 1</p>
-          </div>
-        </div>
+'use strict';
+//const functions = require('@google-cloud/functions-framework');
+const platformClient = require('purecloud-platform-client-v2');
+const functions = require('firebase-functions');
+const dialogflow = require('dialogflow');
 
-        {/* Card 2 */}
-        <div className="w-full md:w-1/2 lg:w-1/3 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-4">
-            {/* Add your chart component here */}
-            <p>Chart 2</p>
-          </div>
-        </div>
+// Initialize PureCloud API client
+const client = platformClient.ApiClient.instance;
 
-        {/* Card 3 */}
-        <div className="w-full md:w-1/2 lg:w-1/3 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-4">
-            {/* Add your chart component here */}
-            <p>Chart 3</p>
-          </div>
-        </div>
-      </div>
-    </div>
+// Set environment base path (replace with your specific Genesys Cloud region)
+client.setEnvironment(platformClient.PureCloudRegionHosts.us_east_1);
 
 
+//AUTH
+client.loginClientCredentialsGrant(CId, CSecret)
+    .then(() => {
+        console.log('Authentication Successfull');
+    })
+    .catch((err) => {
+        console.log('err', err);
+    });
+
+let apiInstance = new platformClient.ArchitectApi();
+let integrationApis = new platformClient.IntegrationsApi();
+
+
+exports.gdfivr = (req, res) => {
+    const tag = req.body.fulfillmentInfo.tag;
+    let mysesssion = req.body.sessionInfo.session;
+
+
+    console.log('tag', tag);
+    let jsonResponse = {};
+
+    if (tag == "DnisPrompt") {
+        let datatableId = "6c98b9ad038a"; // String | id of datatable
+        let rowId = "MainPrompt"; // String | The key for the row
+        let opts = {
+            'showbrief': false // Boolean | if true returns just the key field for the row
+        };
+        let result;
+        let MessageType;
+        let MaintainOrGenMsg;
+        let isMainOrGenMsgPresent;
+        let sessionParameters = {};
+        async function getValueOfPromptMsg() {
+            try {
+
+                //------------ Getting type of msg from data table ------------------
+                result = await apiInstance.getFlowsDatatableRow(datatableId, rowId, opts)
+                sessionParameters.MessageType = result['MsgType'];
+                // console.log("MessageType", MessageType)
+                MaintainOrGenMsg = result['MaintainOrGenMsg'];
+                console.log('MaintainOrGenMsg', MaintainOrGenMsg);
+
+                let MaintainOrGenMsgPrompt;
+                if (MaintainOrGenMsg == "M-Y" || MaintainOrGenMsg == "G-Y") {
+                    if (MaintainOrGenMsg == "M-Y") {
+                        let prompt = result['PromptNameMainOrGenMsg'];
+                        //console.log('prompt', prompt);
+                        sessionParameters.isMainOrGenMsgPresent = "True";
+                        sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:" + prompt;
+
+                    } else if (MaintainOrGenMsg == "G-Y") {
+                        let prompt = result['PromptNameMainOrGenMsg'];
+                        //console.log('prompt', prompt);
+                        sessionParameters.isMainOrGenMsgPresent = "True";
+                        sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:" + prompt;
+                    }
+                } else {
+                    sessionParameters.isMainOrGenMsgPresent = "False";
+                    sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:silent1ms"
+                }
+
+                //---------------- calling ANI and SSN action for name ---------------
+                let ani = req.body.sessionInfo.parameters.ANI
+                console.log("PP_ANI", ani);
+                let actionId_ANIMatch = "fb987ae65e9e";
+                let body = {
+                    ani: ani,
+                    env: 'accp'
+                };
+                let ssnViaAni;
+                let aniMatch;
+                let fName;
+                let aniaction = await integrationApis.postIntegrationsActionExecute(actionId_ANIMatch, body)
+                if (aniaction.status == "success") {
+                    sessionParameters.aniMatch = "Y";
+                    sessionParameters.ssnViaAni = aniaction.ssn;
+                    //sessionParameters.ssnViaAni = "433444311"
+                    console.log("firstPlace", sessionParameters)
+                } else {
+                    sessionParameters.aniMatch = "N";
+                    console.log("Secondplace", sessionParameters)
+                }
+                console.log("PP_aniMatch ", aniMatch)
+
+
+                if (sessionParameters.ssnViaAni != null || sessionParameters.ssnViaAni != "") {
+                    console.log("thirdPlace", sessionParameters)
+                    let ssn_body = {
+                        enteredIdentifier: sessionParameters.ssnViaAni,
+                        identifierType: 'SSN',
+                        clientID: 'INGWIN',
+                        sourceApp: 'IVR',
+                        env: 'accp'
+                    };
+                    let actionId_SSNAction = "6945ffd7afe4";
+                    let ssnaction = await integrationApis.postIntegrationsActionExecute(actionId_SSNAction, ssn_body)
+                    if (ssnaction.status == "success" && ssnaction.fname != "") {
+                        sessionParameters.fName = ssnaction.fname;
+                        console.log("forthPlace", sessionParameters)
+                    }
+                    console.log("PP_Fname", fName)
+                }
+                //console.log('result', result);
+                return sessionParameters;
+            } catch (err) {
+                return Promise.reject(err);
+            }
+        }
+        getValueOfPromptMsg()
+            .then(sessionParameters => {
+                // console.log("result1", result);
+                // console.log("result['MsgType']", result['MsgType']);
+                // console.log("result.MsgType", result.MsgType)
+
+                console.log("completeSessionParas", sessionParameters)
+                const response = {
+                    sessionInfo: {
+                        parameters: {
+                            ...sessionParameters
+                        },
+                    },
+                }
+                res.status(200).send(response);
+                console.log('DF Req body 1: ' + JSON.stringify(req.body));
+
+            }).catch(err => {
+                console.log('err', err);
+            })
+
+
+    }
+    else if (tag == "DnisBasedPrompt") {
+        let dnis = req.body.sessionInfo.parameters.dnis;
+        console.log("dnis", dnis);
+        let promptname = "Greeting_" + dnis;
+        console.log("promptname", promptname);
+        let opts = {
+            'pageNumber': 1, // Number | Page number
+            'pageSize': 500, // Number | Page size
+            'name': [promptname], // [String] | Name
+            'description': "", // String | Description
+            'nameOrDescription': "", // String | Name or description
+            'sortBy': "id", // String | Sort by
+            'sortOrder': "asc", // String | Sort order
+            'includeMediaUris': true, // Boolean | Include the media URIs for each resource
+            'includeResources': false, // Boolean | Include the resources for each system prompt
+            'language': ["language_example"] // [String] | Filter the resources down to the provided languages
+        };
+        let result;
+        let MessageType;
+        async function checkIfPromptPresent() {
+            try {
+                result = await apiInstance.getArchitectPrompts(opts)
+                //console.log("R_Result", result);
+                if (result.entities.length > 0) {
+                    if (result.entities[0].name != null) {
+                        let temp = result.entities[0].name;
+                        console.log('temp', temp);
+                        let storagePath = "urn:genesys:userprompt:" + temp;
+                        return storagePath;
+                    } else {
+                        console.log("else 2");
+                        let storagePath = "urn:genesys:userprompt:Greeting_1234567890";
+                        return storagePath;
+                    }
+                } else {
+                    let storagePath = "urn:genesys:userprompt:Greeting_1234567890";
+                    return storagePath;
+                }
+
+            } catch (err) {
+                return Promise.reject(err);
+            }
+        }
+        checkIfPromptPresent()
+            .then(storagePath => {
+                console.log("result11", storagePath);
+                const response = {
+                    sessionInfo: {
+                        parameters: {
+                            "promptNameOfGreeting": storagePath,
+                        },
+                    },
+                }
+                res.status(200).send(response);
+                console.log('DF Req body: 3' + JSON.stringify(req.body));
+            }).catch(err => {
+                console.log(err);
+            })
+    }
+    else if (tag == "test") {
+        let ssn = req.body.sessionInfo.parameters.ssn;
+        console.log('Test Dialogflow Request body: ' + JSON.stringify(req.body));
+        console.log("SSN test", ssn);
+    }
+    else if (tag == "test2") {
+        let l4ssn = req.body.sessionInfo.parameters.l4ssn;
+        console.log('Test Dialogflow Request body: ' + JSON.stringify(req.body));
+        console.log(" l4 SSN test", l4ssn);
+    }
+    else if (tag == "PromptSSN") {
+        let check = req.body.sessionInfo.parameters.aniMatch;
+        if (check == "Y") {
+            let apiInstanceI = new platformClient.IntegrationsApi();
+            let actionId = "15c41da9e6a4";
+            let l4ssn = req.body.sessionInfo.parameters.l4ssn;
+            let ani = req.body.sessionInfo.parameters.ANI;
+            l4ssn = l4ssn.replace(/\s/g, "");
+            let body = {
+                enteredIdentifier: l4ssn,
+                identifierType: 'SSN',
+                clientId: 'INGWIN',
+                ani: ani,
+                sourceApp: 'IVR',
+                env: 'accp'
+            };
+            apiInstanceI.postIntegrationsActionExecute(actionId, body)
+                .then((data) => {
+                    console.log('animatchaction', data);
+                    const status = data.status;
+                    const customername = data.fname;
+                    console.log("Status", status);
+                    console.log("Name", customername);
+
+                    if (status == "success") {
+                        let prompt = "urn:genesys:userprompt:Identification_SSN_Found";
+                        const response = {
+                            sessionInfo: {
+                                parameters: {
+                                    "ConfirmationPrompt": prompt,
+                                    "CName": customername,
+                                },
+                            }
+                        }
+                        res.status(200).send(response);
+                    } else {
+                        let prompt = "urn:genesys:userprompt:Identification_SSN_NotFound";
+                        const response = {
+                            sessionInfo: {
+                                parameters: {
+                                    "ConfirmationPrompt": prompt,
+                                },
+                            }
+                        }
+                        res.status(200).send(response);
+                    }
+                    console.log('DF Req body: 2' + JSON.stringify(req.body));
+                    //console.log(`postIntegrationsActionExecute success! data: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch((err) => {
+                    console.log('L4SSN - There was a failure calling postIntegrationsActionExecute');
+                    console.error(err);
+                });
+        } else {
+            let apiInstanceI = new platformClient.IntegrationsApi();
+            let actionId = "6945ffd7afe4";
+            let ssn = req.body.sessionInfo.parameters.ssn;
+            ssn = ssn.replace(/\s/g, "");
+            //console.log("SSN after", ssn);
+            let body = {
+                enteredIdentifier: ssn,
+                identifierType: 'SSN',
+                clientID: 'INGWIN',
+                sourceApp: 'IVR',
+                env: 'accp'
+            };
+            apiInstanceI.postIntegrationsActionExecute(actionId, body)
+                .then((data) => {
+                    const status = data.status;
+                    const customername = data.fname;
+                    console.log("Status", status);
+                    console.log("Name", customername);
+
+                    if (status == "success") {
+                        let prompt = "urn:genesys:userprompt:Identification_SSN_Found";
+                        const response = {
+                            sessionInfo: {
+                                parameters: {
+                                    "ConfirmationPrompt": prompt,
+                                    "CName": customername,
+                                },
+                            }
+                        }
+                        res.status(200).send(response);
+                    } else {
+                        let prompt = "urn:genesys:userprompt:Identification_SSN_NotFound";
+                        const response = {
+                            sessionInfo: {
+                                parameters: {
+                                    "ConfirmationPrompt": prompt,
+                                },
+                            }
+                        }
+                        res.status(200).send(response);
+                    }
+                    console.log('DF Req body: 3' + JSON.stringify(req.body));
+                    //console.log(`postIntegrationsActionExecute success! data: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch((err) => {
+                    console.log('Full SSN - There was a failure calling postIntegrationsActionExecute');
+                    console.error(err);
+                });
+        }
+
+    }
+    
+
+
+
+    console.log('DF Req body: LAST' + JSON.stringify(req.body));
+}
