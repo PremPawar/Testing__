@@ -2,6 +2,7 @@
 
 const platformClient = require('purecloud-platform-client-v2');
 const functions = require('firebase-functions');
+const dialogflow = require('dialogflow');
 
 // Initialize PureCloud API client
 const client = platformClient.ApiClient.instance;
@@ -9,56 +10,29 @@ const client = platformClient.ApiClient.instance;
 // Set environment base path (replace with your specific Genesys Cloud region)
 client.setEnvironment(platformClient.PureCloudRegionHosts.us_east_1);
 
-const loginClientCredentialsGrant = async (CId, CSecret) => {
+async function loginClientCredentialsGrant(CId, CSecret) {
   try {
     await client.loginClientCredentialsGrant(CId, CSecret);
     console.log('Authentication Successful');
   } catch (err) {
     console.error('Authentication Error:', err);
   }
-};
+}
 
-const getFlowsDatatableRow = async (datatableId, rowId, opts) => {
-  try {
-    const result = await apiInstance.getFlowsDatatableRow(datatableId, rowId, opts);
-    return result;
-  } catch (err) {
-    console.error('Error getting datatable row:', err);
-    throw err; // Re-throw for caller to handle
-  }
-};
-
-const getArchitectPrompts = async (opts) => {
-  try {
-    const result = await apiInstance.getArchitectPrompts(opts);
-    return result;
-  } catch (err) {
-    console.error('Error getting prompts:', err);
-    throw err; // Re-throw for caller to handle
-  }
-};
-
-const postIntegrationsActionExecute = async (actionId, body) => {
-  try {
-    const data = await apiInstanceI.postIntegrationsActionExecute(actionId, body);
-    return data;
-  } catch (err) {
-    console.error('Error calling postIntegrationsActionExecute:', err);
-    throw err; // Re-throw for caller to handle
-  }
-};
+let apiInstance = new platformClient.ArchitectApi();
+let integrationApis = new platformClient.IntegrationsApi();
 
 exports.gdfivr = async (req, res) => {
   const tag = req.body.fulfillmentInfo.tag;
   let sessionParameters = {};
 
-  try {
-    if (tag === "DnisPrompt") {
-      const datatableId = "6c98b9ad038a";
-      const rowId = "MainPrompt";
-      const opts = { 'showbrief': false };
+  if (tag === "DnisPrompt") {
+    const datatableId = "6c98b9ad038a";
+    const rowId = "MainPrompt";
+    const opts = { 'showbrief': false };
 
-      const result = await getFlowsDatatableRow(datatableId, rowId, opts);
+    try {
+      const result = await apiInstance.getFlowsDatatableRow(datatableId, rowId, opts);
 
       sessionParameters.MessageType = result['MsgType'];
       MaintainOrGenMsg = result['MaintainOrGenMsg'];
@@ -81,14 +55,18 @@ exports.gdfivr = async (req, res) => {
       let aniMatch;
       let fName;
 
-      const aniaction = await postIntegrationsActionExecute(actionId_ANIMatch, body);
-      if (aniaction.status === "success") {
-        sessionParameters.aniMatch = "Y";
-        sessionParameters.ssnViaAni = aniaction.ssn;
-      } else {
-        sessionParameters.aniMatch = "N";
+      try {
+        const aniaction = await integrationApis.postIntegrationsActionExecute(actionId_ANIMatch, body);
+        if (aniaction.status === "success") {
+          sessionParameters.aniMatch = "Y";
+          sessionParameters.ssnViaAni = aniaction.ssn;
+        } else {
+          sessionParameters.aniMatch = "N";
+        }
+        console.log("firstPlace", sessionParameters);
+      } catch (err) {
+        console.error('Error calling postIntegrationsActionExecute (ANI):', err);
       }
-      console.log("firstPlace", sessionParameters);
 
       if (sessionParameters.ssnViaAni) {
         const ssn_body = {
@@ -99,6 +77,29 @@ exports.gdfivr = async (req, res) => {
           env: 'accp'
         };
         const actionId_SSNAction = "6945ffd7afe4";
-        const ssnaction = await postIntegrationsActionExecute(actionId_SSNAction, ssn_body);
-        if (ssnaction.status === "success" && ssnaction.fname) {
-          sessionParameters.fName = ssnaction.fname
+
+        try {
+          const ssnaction = await integrationApis.postIntegrationsActionExecute(actionId_SSNAction, ssn_body);
+          if (ssnaction.status === "success" && ssnaction.fname) {
+            sessionParameters.fName = ssnaction.fname;
+          }
+          console.log("forthPlace", sessionParameters);
+        } catch (err) {
+          console.error('Error calling postIntegrationsActionExecute (SSN):', err);
+        }
+      }
+    } catch (err) {
+      console.error('Error getting datatable row:', err);
+    }
+
+    const response = {
+      sessionInfo: {
+        parameters: {
+          ...sessionParameters
+        },
+      }
+    };
+    res.status(200).send(response);
+    console.log('DF Req body 1: ' + JSON.stringify(req.body));
+  } else if (tag === "DnisBasedPrompt") {
+    const dnis = req.body.sessionInfo.parameters.d
