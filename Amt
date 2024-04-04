@@ -1,105 +1,38 @@
-'use strict';
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
-const platformClient = require('purecloud-platform-client-v2');
-const functions = require('firebase-functions');
-const dialogflow = require('dialogflow');
+public class Main {
+    public static void main(String[] args) {
+        // Original response received from the backend
+        Map<String, Integer> responseData = new HashMap<>();
+        responseData.put("2024-03-14", 6736);
+        responseData.put("2024-03-15", 7007);
+        responseData.put("2024-03-18", 8707);
+        responseData.put("2024-03-19", 7598);
+        responseData.put("2024-03-20", 7693);
+        responseData.put("2024-03-21", 70);
 
-// Initialize PureCloud API client
-const client = platformClient.ApiClient.instance;
+        // Process the response to add missing weekend dates with 0 value
+        addWeekendDates(responseData);
 
-// Set environment base path (replace with your specific Genesys Cloud region)
-client.setEnvironment(platformClient.PureCloudRegionHosts.us_east_1);
-
-async function loginClientCredentialsGrant(CId, CSecret) {
-  try {
-    await client.loginClientCredentialsGrant(CId, CSecret);
-    console.log('Authentication Successful');
-  } catch (err) {
-    console.error('Authentication Error:', err);
-  }
-}
-
-let apiInstance = new platformClient.ArchitectApi();
-let integrationApis = new platformClient.IntegrationsApi();
-
-exports.gdfivr = async (req, res) => {
-  const tag = req.body.fulfillmentInfo.tag;
-  let sessionParameters = {};
-
-  if (tag === "DnisPrompt") {
-    const datatableId = "6c98b9ad038a";
-    const rowId = "MainPrompt";
-    const opts = { 'showbrief': false };
-
-    try {
-      const result = await apiInstance.getFlowsDatatableRow(datatableId, rowId, opts);
-
-      sessionParameters.MessageType = result['MsgType'];
-      MaintainOrGenMsg = result['MaintainOrGenMsg'];
-      console.log('MaintainOrGenMsg', MaintainOrGenMsg);
-
-      if (MaintainOrGenMsg === "M-Y" || MaintainOrGenMsg === "G-Y") {
-        const promptName = result['PromptNameMainOrGenMsg'];
-        sessionParameters.isMainOrGenMsgPresent = "True";
-        sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:" + promptName;
-      } else {
-        sessionParameters.isMainOrGenMsgPresent = "False";
-        sessionParameters.MaintainOrGenMsgPrompt = "urn:genesys:userprompt:silent1ms";
-      }
-
-      const ani = req.body.sessionInfo.parameters.ANI;
-      const actionId_ANIMatch = "fb987ae65e9e";
-      const body = { ani, env: 'accp' };
-
-      let ssnViaAni;
-      let aniMatch;
-      let fName;
-
-      try {
-        const aniaction = await integrationApis.postIntegrationsActionExecute(actionId_ANIMatch, body);
-        if (aniaction.status === "success") {
-          sessionParameters.aniMatch = "Y";
-          sessionParameters.ssnViaAni = aniaction.ssn;
-        } else {
-          sessionParameters.aniMatch = "N";
-        }
-        console.log("firstPlace", sessionParameters);
-      } catch (err) {
-        console.error('Error calling postIntegrationsActionExecute (ANI):', err);
-      }
-
-      if (sessionParameters.ssnViaAni) {
-        const ssn_body = {
-          enteredIdentifier: sessionParameters.ssnViaAni,
-          identifierType: 'SSN',
-          clientID: 'INGWIN',
-          sourceApp: 'IVR',
-          env: 'accp'
-        };
-        const actionId_SSNAction = "6945ffd7afe4";
-
-        try {
-          const ssnaction = await integrationApis.postIntegrationsActionExecute(actionId_SSNAction, ssn_body);
-          if (ssnaction.status === "success" && ssnaction.fname) {
-            sessionParameters.fName = ssnaction.fname;
-          }
-          console.log("forthPlace", sessionParameters);
-        } catch (err) {
-          console.error('Error calling postIntegrationsActionExecute (SSN):', err);
-        }
-      }
-    } catch (err) {
-      console.error('Error getting datatable row:', err);
+        // Print the updated response
+        System.out.println(responseData);
     }
 
-    const response = {
-      sessionInfo: {
-        parameters: {
-          ...sessionParameters
-        },
-      }
-    };
-    res.status(200).send(response);
-    console.log('DF Req body 1: ' + JSON.stringify(req.body));
-  } else if (tag === "DnisBasedPrompt") {
-    const dnis = req.body.sessionInfo.parameters.d
+    private static void addWeekendDates(Map<String, Integer> responseData) {
+        // Iterate over the dates from the response
+        for (LocalDate date = LocalDate.parse("2024-03-14"); date.isBefore(LocalDate.parse("2024-03-22")); date = date.plusDays(1)) {
+            // Check if the date is a weekend (Saturday or Sunday)
+            if (date.getDayOfWeek().getValue() >= 6) {
+                // Convert the date to the format used in the response
+                String formattedDate = date.toString();
+                // Check if the date is missing from the response
+                if (!responseData.containsKey(formattedDate)) {
+                    // Add the missing weekend date with a value of 0
+                    responseData.put(formattedDate, 0);
+                }
+            }
+        }
+    }
+}
