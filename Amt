@@ -1,3 +1,4 @@
+ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,26 +14,38 @@ public class Main {
         responseData.put("2024-03-20", 7693);
         responseData.put("2024-03-21", 70);
 
-        // Process the response to add missing dates with 0 value
-        addMissingDates(responseData);
+        // Process the response to add missing weekend dates with 0 value
+        addWeekendDates(responseData);
 
         // Print the updated response
         System.out.println(responseData);
     }
 
-    private static void addMissingDates(Map<String, Integer> responseData) {
-        // Define the start and end dates
-        LocalDate startDate = LocalDate.parse("2024-03-14");
-        LocalDate endDate = LocalDate.parse("2024-03-21");
+    private static void addWeekendDates(Map<String, Integer> responseData) {
+        // Determine the start date and end date dynamically
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+        for (String date : responseData.keySet()) {
+            LocalDate currentDate = LocalDate.parse(date);
+            if (startDate == null || currentDate.isBefore(startDate)) {
+                startDate = currentDate;
+            }
+            if (endDate == null || currentDate.isAfter(endDate)) {
+                endDate = currentDate;
+            }
+        }
 
         // Iterate over the dates from the start date to the end date
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            // Convert the date to the format used in the response and add double quotes
-            String formattedDate = "\"" + date.toString() + "\"";
-            // Check if the date is missing from the response
-            if (!responseData.containsKey(formattedDate)) {
-                // Add the missing date with a value of 0
-                responseData.put(formattedDate, 0);
+            // Check if the date is a weekend (Saturday or Sunday)
+            if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                // Convert the date to the format used in the response and add double quotes
+                String formattedDate = "\"" + date.toString() + "\"";
+                // Check if the date is missing from the response
+                if (!responseData.containsKey(formattedDate)) {
+                    // Add the missing weekend date with a value of 0
+                    responseData.put(formattedDate, 0);
+                }
             }
         }
     }
