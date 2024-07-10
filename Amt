@@ -1,52 +1,90 @@
- import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
+import React, { useState } from 'react';
 
-public class Main {
-    public static void main(String[] args) {
-        // Original response received from the backend
-        Map<String, Integer> responseData = new HashMap<>();
-        responseData.put("2024-03-14", 6736);
-        responseData.put("2024-03-15", 7007);
-        responseData.put("2024-03-18", 8707);
-        responseData.put("2024-03-19", 7598);
-        responseData.put("2024-03-20", 7693);
-        responseData.put("2024-03-21", 70);
+const MyForm = () => {
+  const [phone1, setPhone1] = useState('');
+  const [phone2, setPhone2] = useState('');
+  const [text, setText] = useState('');
+  const maxTextLength = 250;
 
-        // Process the response to add missing weekend dates with 0 value
-        addWeekendDates(responseData);
+  const handlePhone1Change = (e) => {
+    setPhone1(e.target.value);
+  };
 
-        // Print the updated response
-        System.out.println(responseData);
-    }
+  const handlePhone2Change = (e) => {
+    setPhone2(e.target.value);
+  };
 
-    private static void addWeekendDates(Map<String, Integer> responseData) {
-        // Determine the start date and end date dynamically
-        LocalDate startDate = null;
-        LocalDate endDate = null;
-        for (String date : responseData.keySet()) {
-            LocalDate currentDate = LocalDate.parse(date);
-            if (startDate == null || currentDate.isBefore(startDate)) {
-                startDate = currentDate;
-            }
-            if (endDate == null || currentDate.isAfter(endDate)) {
-                endDate = currentDate;
-            }
-        }
+  const handleTextChange = (e) => {
+    setText(e.target.value);
+  };
 
-        // Iterate over the dates from the start date to the end date
-        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            // Check if the date is a weekend (Saturday or Sunday)
-            if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                // Convert the date to the format used in the response and add double quotes
-                String formattedDate = "\"" + date.toString() + "\"";
-                // Check if the date is missing from the response
-                if (!responseData.containsKey(formattedDate)) {
-                    // Add the missing weekend date with a value of 0
-                    responseData.put(formattedDate, 0);
-                }
-            }
-        }
-    }
-}
+  const handleSubmit = () => {
+    // Handle form submission logic here
+    console.log('Phone 1:', phone1);
+    console.log('Phone 2:', phone2);
+    console.log('Message:', text);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Contact Form</h2>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone1">
+            Phone Number 1
+          </label>
+          <input
+            type="tel"
+            id="phone1"
+            value={phone1}
+            onChange={handlePhone1Change}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Enter phone number"
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone2">
+            Phone Number 2
+          </label>
+          <input
+            type="tel"
+            id="phone2"
+            value={phone2}
+            onChange={handlePhone2Change}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Enter phone number"
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="message">
+            Message
+          </label>
+          <textarea
+            id="message"
+            maxLength={maxTextLength}
+            value={text}
+            onChange={handleTextChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Enter your message"
+          ></textarea>
+          <p className="text-right text-gray-500 text-sm">{text.length}/{maxTextLength}</p>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MyForm;
